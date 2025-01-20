@@ -12,6 +12,34 @@ public http_get()
     ezhttp_get("https://httpbin.org/get", "http_complete")
 }
 
+public http_get_with_data()
+{
+    new dat[1];
+    dat[0] = 1337;
+
+    ezhttp_get(
+        .url = "https://httpbin.org/get", 
+        .on_complete = "http_complete_with_data", 
+        .data = dat, 
+        .data_len = sizeof(dat)
+    );
+
+    // OR like that. Prefer the second variant if you use options
+    new EzHttpOptions:options = ezhttp_create_options()
+    ezhttp_option_set_user_data(options, dat, sizeof(dat))
+
+    ezhttp_get(
+        .url = "https://httpbin.org/get", 
+        .on_complete = "http_complete_with_data", 
+        .options_id = options
+    );
+}
+
+public http_complete_with_data(EzHttpRequest:request_id, const data[])
+{
+    server_print("data[0]: %d", data[0]);
+}
+
 public http_post()
 {
     new EzHttpOptions:options_id = ezhttp_create_options()
@@ -44,8 +72,21 @@ public http_complete(EzHttpRequest:request_id)
 
 public ftp_upload()
 {
-    ezhttp_ftp_upload("user", "password", "127.0.0.1", "wads/cstrike_1.wad", "cstrike.wad", "ftp_upload_complete")
-    ezhttp_ftp_upload2("ftp://user:password@127.0.0.1/wads/cstrike_2.wad", "cstrike.wad", "ftp_upload_complete", EZH_SECURE_EXPLICIT)
+    ezhttp_ftp_upload(
+        .user = "user", 
+        .password = "password", 
+        .host = "127.0.0.1", 
+        .remote_file = "wads/cstrike_1.wad", 
+        .local_file = "cstrike.wad", 
+        .on_complete = "ftp_upload_complete"
+    )
+
+    ezhttp_ftp_upload2(
+        .uri = "ftp://user:password@127.0.0.1/wads/cstrike_2.wad", 
+        .local_file = "cstrike.wad", 
+        .on_complete = "ftp_upload_complete",
+        .security = EZH_SECURE_EXPLICIT
+    )
 }
 
 public ftp_upload_complete(EzHttpRequest:request_id)
@@ -66,12 +107,12 @@ public ftp_upload_complete(EzHttpRequest:request_id)
 * Url encoded POST values
 * Basic authentication
 * Connection and request timeout specification
-* Timeout for low speed connection
 * Cookie support
 * Proxy support
 * OpenSSL and WinSSL support for HTTPS requests
 * FTP/FTPES download and upload support
 * Built-in JSON support
+* HTTP keep-alive support
 
 ## Advanced features
 
@@ -96,5 +137,19 @@ Building the library is done using CMake. You can run the CMake GUI to configure
 mkdir Release
 cd Release
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make
+make easy_http
+```
+
+### Building with Docker
+
+You can use Docker to build AmxxEasyHttp for Linux. Create the image once with the command:
+
+```
+docker build -t amxx-ezhttp-builder .
+```
+
+Run the Docker container to build the module:
+
+```
+docker run --rm -v .:/ezhttp amxx-ezhttp-builder
 ```

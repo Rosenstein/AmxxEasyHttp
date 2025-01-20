@@ -2,7 +2,7 @@
 #include <utility>
 #include <fstream>
 
-#include <amxxmodule.h>
+#include <sdk/amxxmodule.h>
 
 #include "EasyHttpModule.h"
 #include "json/JsonMngr.h"
@@ -11,8 +11,6 @@
 #include "utils/string_utils.h"
 #include "utils/amxx_utils.h"
 
-#include <undef_metamod.h>
-
 using namespace ezhttp;
 
 bool ValidateOptionsId(AMX* amx, OptionsId options_id);
@@ -20,7 +18,7 @@ bool ValidateRequestId(AMX* amx, RequestId request_id);
 bool ValidateQueueId(AMX* amx, QueueId queue_id);
 template <class TMethod> void SetKeyValueOption(AMX* amx, cell* params, TMethod method);
 template <class TMethod> void SetStringOption(AMX* amx, cell* params, TMethod method);
-RequestId SendRequest(AMX* amx, RequestMethod method, OptionsId options_id, const std::string& url, const std::string& callback);
+RequestId SendRequest(AMX* amx, RequestMethod method, OptionsId options_id, const std::string& url, const std::string& callback, cell* data = nullptr, int data_len = 0);
 
 std::unique_ptr<EasyHttpModule> g_EasyHttpModule;
 std::unique_ptr<JSONMngr> g_JsonManager;
@@ -228,29 +226,141 @@ cell AMX_NATIVE_CALL ezhttp_option_set_queue(AMX* amx, cell* params)
 // native EzHttpRequest:ezhttp_get(const url[], const on_complete[], EzHttpOptions:options_id = EzHttpOptions:0);
 cell AMX_NATIVE_CALL ezhttp_get(AMX* amx, cell* params)
 {
+    enum { arg_count, arg_url, arg_callback, arg_option_id, arg_data, arg_data_len };
+
     int url_len;
-    char* url = MF_GetAmxString(amx, params[1], 0, &url_len);
+    char* url = MF_GetAmxString(amx, params[arg_url], 0, &url_len);
 
     int callback_len;
-    char* callback = MF_GetAmxString(amx, params[2], 1, &callback_len);
+    char* callback = MF_GetAmxString(amx, params[arg_callback], 1, &callback_len);
 
-    auto options_id = (OptionsId)params[3];
+    int data_len = 0;
+    cell* data = nullptr;
+    if (params[arg_count] > 3)
+    {
+        data_len = params[arg_data_len];
+        if (data_len > 0)
+        {
+            data = new cell[data_len];
+            MF_CopyAmxMemory(data, MF_GetAmxAddr(amx, params[arg_data]), data_len);
+        }
+    }
 
-    return (cell)SendRequest(amx, RequestMethod::HttpGet, options_id, std::string(url, url_len), std::string(callback, callback_len));
+    auto options_id = (OptionsId)params[arg_option_id];
+
+    return (cell)SendRequest(amx, RequestMethod::HttpGet, options_id, std::string(url, url_len), std::string(callback, callback_len), data, data_len);
 }
 
 // native EzHttpRequest:ezhttp_post(const url[], const on_complete[], EzHttpOptions:options_id = EzHttpOptions:0);
 cell AMX_NATIVE_CALL ezhttp_post(AMX* amx, cell* params)
 {
+    enum { arg_count, arg_url, arg_callback, arg_option_id, arg_data, arg_data_len };
+
     int url_len;
-    char* url = MF_GetAmxString(amx, params[1], 0, &url_len);
+    char* url = MF_GetAmxString(amx, params[arg_url], 0, &url_len);
 
     int callback_len;
-    char* callback = MF_GetAmxString(amx, params[2], 1, &callback_len);
+    char* callback = MF_GetAmxString(amx, params[arg_callback], 1, &callback_len);
 
-    auto options_id = (OptionsId)params[3];
+    int data_len = 0;
+    cell* data = nullptr;
+    if (params[arg_count] > 3)
+    {
+        data_len = params[arg_data_len];
+        if (data_len > 0)
+        {
+            data = new cell[data_len];
+            MF_CopyAmxMemory(data, MF_GetAmxAddr(amx, params[arg_data]), data_len);
+        }
+    }
 
-    return (cell)SendRequest(amx, RequestMethod::HttpPost, options_id, std::string(url, url_len), std::string(callback, callback_len));
+    auto options_id = (OptionsId)params[arg_option_id];
+
+    return (cell)SendRequest(amx, RequestMethod::HttpPost, options_id, std::string(url, url_len), std::string(callback, callback_len), data, data_len);
+}
+
+// native EzHttpRequest:ezhttp_put(const url[], const on_complete[], EzHttpOptions:options_id = EzHttpOptions:0);
+cell AMX_NATIVE_CALL ezhttp_put(AMX* amx, cell* params)
+{
+    enum { arg_count, arg_url, arg_callback, arg_option_id, arg_data, arg_data_len };
+
+    int url_len;
+    char* url = MF_GetAmxString(amx, params[arg_url], 0, &url_len);
+
+    int callback_len;
+    char* callback = MF_GetAmxString(amx, params[arg_callback], 1, &callback_len);
+
+    int data_len = 0;
+    cell* data = nullptr;
+    if (params[arg_count] > 3)
+    {
+        data_len = params[arg_data_len];
+        if (data_len > 0)
+        {
+            data = new cell[data_len];
+            MF_CopyAmxMemory(data, MF_GetAmxAddr(amx, params[arg_data]), data_len);
+        }
+    }
+
+    auto options_id = (OptionsId)params[arg_option_id];
+
+    return (cell)SendRequest(amx, RequestMethod::HttpPut, options_id, std::string(url, url_len), std::string(callback, callback_len), data, data_len);
+}
+
+// native EzHttpRequest:ezhttp_patch(const url[], const on_complete[], EzHttpOptions:options_id = EzHttpOptions:0);
+cell AMX_NATIVE_CALL ezhttp_patch(AMX* amx, cell* params)
+{
+    enum { arg_count, arg_url, arg_callback, arg_option_id, arg_data, arg_data_len };
+
+    int url_len;
+    char* url = MF_GetAmxString(amx, params[arg_url], 0, &url_len);
+
+    int callback_len;
+    char* callback = MF_GetAmxString(amx, params[arg_callback], 1, &callback_len);
+
+    int data_len = 0;
+    cell* data = nullptr;
+    if (params[arg_count] > 3)
+    {
+        data_len = params[arg_data_len];
+        if (data_len > 0)
+        {
+            data = new cell[data_len];
+            MF_CopyAmxMemory(data, MF_GetAmxAddr(amx, params[arg_data]), data_len);
+        }
+    }
+
+    auto options_id = (OptionsId)params[arg_option_id];
+
+    return (cell)SendRequest(amx, RequestMethod::HttpPatch, options_id, std::string(url, url_len), std::string(callback, callback_len), data, data_len);
+}
+
+// native EzHttpRequest:ezhttp_delete(const url[], const on_complete[], EzHttpOptions:options_id = EzHttpOptions:0);
+cell AMX_NATIVE_CALL ezhttp_delete(AMX* amx, cell* params)
+{
+    enum { arg_count, arg_url, arg_callback, arg_option_id, arg_data, arg_data_len };
+
+    int url_len;
+    char* url = MF_GetAmxString(amx, params[arg_url], 0, &url_len);
+
+    int callback_len;
+    char* callback = MF_GetAmxString(amx, params[arg_callback], 1, &callback_len);
+
+    int data_len = 0;
+    cell* data = nullptr;
+    if (params[arg_count] > 3)
+    {
+        data_len = params[arg_data_len];
+        if (data_len > 0)
+        {
+            data = new cell[data_len];
+            MF_CopyAmxMemory(data, MF_GetAmxAddr(amx, params[arg_data]), data_len);
+        }
+    }
+
+    auto options_id = (OptionsId)params[arg_option_id];
+
+    return (cell)SendRequest(amx, RequestMethod::HttpDelete, options_id, std::string(url, url_len), std::string(callback, callback_len), data, data_len);
 }
 
 // native ezhttp_is_request_exists(EzHttpRequest:request_id);
@@ -304,7 +414,7 @@ cell AMX_NATIVE_CALL ezhttp_get_http_code(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     return response.status_code;
 }
@@ -317,7 +427,7 @@ cell AMX_NATIVE_CALL ezhttp_get_data(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id) || max_len == 0)
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     utils::SetAmxStringUTF8CharSafe(amx, params[2], response.text.c_str(), response.text.length(), max_len);
 
@@ -333,7 +443,7 @@ cell AMX_NATIVE_CALL ezhttp_parse_json_response(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     JS_Handle json_handle;
     bool result = g_JsonManager->Parse(response.text.c_str(), &json_handle, false, with_comments);
@@ -349,7 +459,7 @@ cell AMX_NATIVE_CALL ezhttp_get_url(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id) || max_len == 0)
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     utils::SetAmxStringUTF8CharSafe(amx, params[2], response.url.c_str(), response.url.str().length(), max_len);
 
@@ -367,7 +477,7 @@ cell AMX_NATIVE_CALL ezhttp_save_data_to_file(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     if (response.text.empty())
         return 0;
@@ -390,7 +500,7 @@ cell AMX_NATIVE_CALL ezhttp_save_data_to_file2(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     return std::fwrite(response.text.data(), sizeof(char), response.text.length(), file_handle);
 }
@@ -402,7 +512,7 @@ cell AMX_NATIVE_CALL ezhttp_get_headers_count(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     return response.header.size();
 }
@@ -417,7 +527,7 @@ cell AMX_NATIVE_CALL ezhttp_get_headers(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     const std::string header_key(key, key_len);
     if (response.header.count(header_key) == 1)
@@ -457,7 +567,7 @@ cell AMX_NATIVE_CALL ezhttp_get_elapsed(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     return amx_ftoc(response.elapsed);
 }
@@ -469,9 +579,10 @@ cell AMX_NATIVE_CALL ezhttp_get_cookies_count(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
-    return response.cookies.size();
+    size_t size = response.cookies.end() - response.cookies.begin();
+    return (cell)size;
 }
 
 cell AMX_NATIVE_CALL ezhttp_get_cookies(AMX* amx, cell* params)
@@ -484,12 +595,14 @@ cell AMX_NATIVE_CALL ezhttp_get_cookies(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     const std::string cookie_key(key, key_len);
-    if (response.cookies.contains(cookie_key))
+
+    auto it = std::find_if(response.cookies.begin(), response.cookies.end(), [&cookie_key](const auto& item) { return item.GetName() == cookie_key; });
+    if (it != response.cookies.end())
     {
-        const std::string& cookie_value = response.cookies[cookie_key];
+        const std::string& cookie_value = it->GetValue();
 
         utils::SetAmxStringUTF8CharSafe(amx, params[3], cookie_value.c_str(), cookie_value.length(), value_max_len);
 
@@ -511,7 +624,7 @@ cell AMX_NATIVE_CALL ezhttp_get_error_code(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     return (cell)response.error.code;
 }
@@ -524,7 +637,7 @@ cell AMX_NATIVE_CALL ezhttp_get_error_message(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id) || max_len == 0)
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     utils::SetAmxStringUTF8CharSafe(amx, params[2], response.error.message.c_str(), response.error.message.length(), max_len);
 
@@ -538,7 +651,7 @@ cell AMX_NATIVE_CALL ezhttp_get_redirect_count(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     return response.redirect_count;
 }
@@ -550,7 +663,7 @@ cell AMX_NATIVE_CALL ezhttp_get_uploaded_bytes(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     return response.uploaded_bytes;
 }
@@ -562,7 +675,7 @@ cell AMX_NATIVE_CALL ezhttp_get_downloaded_bytes(AMX* amx, cell* params)
     if (!ValidateRequestId(amx, request_id))
         return 0;
 
-    const cpr::Response& response = g_EasyHttpModule->GetRequest(request_id).response;
+    const Response& response = g_EasyHttpModule->GetRequest(request_id).response;
 
     return response.downloaded_bytes;
 }
@@ -728,29 +841,43 @@ cell AMX_NATIVE_CALL ezhttp_steam_to_steam64(AMX* amx, cell* params)
     return 1;
 }
 
-RequestId SendRequest(AMX* amx, RequestMethod method, OptionsId options_id, const std::string& url, const std::string& callback)
+RequestId SendRequest(AMX* amx, RequestMethod method, OptionsId options_id, const std::string& url, const std::string& callback, cell* data, const int data_len)
 {
     int callback_id = -1;
     if (!callback.empty())
     {
-        callback_id = MF_RegisterSPForwardByName(amx, callback.c_str(), FP_CELL, FP_DONE);
+        if (data == nullptr)
+        {
+            callback_id = MF_RegisterSPForwardByName(amx, callback.c_str(), FP_CELL, FP_DONE);
+        } else {
+            callback_id = MF_RegisterSPForwardByName(amx, callback.c_str(), FP_CELL, FP_ARRAY, FP_DONE);
+        }
+
         if (callback_id == -1)
         {
+            delete data;
             MF_LogError(amx, AMX_ERR_NATIVE, "Callback function \"%s\" is not exists", callback.c_str());
             return RequestId::Null;
         }
     }
 
-    auto on_complete = [callback_id](RequestId request_id) {
+    auto on_complete = [callback_id, data, data_len](RequestId request_id) {
         if (callback_id == -1)
         {
+            delete data;
             g_EasyHttpModule->DeleteRequest(request_id, true);
             return;
         }
 
-        MF_ExecuteForward(callback_id, request_id);
+        if (data == nullptr)
+        {
+            MF_ExecuteForward(callback_id, request_id);
+        } else {
+            MF_ExecuteForward(callback_id, request_id, MF_PrepareCellArray(data, data_len));
+        }
         MF_UnregisterSPForward(callback_id);
 
+        delete data;
         g_EasyHttpModule->DeleteRequest(request_id, true);
     };
 
@@ -845,6 +972,9 @@ AMX_NATIVE_INFO g_Natives[] =
     // requests
     { "ezhttp_get",                         ezhttp_get },
     { "ezhttp_post",                        ezhttp_post },
+    { "ezhttp_put",                         ezhttp_put },
+    { "ezhttp_patch",                       ezhttp_patch },
+    { "ezhttp_delete",                      ezhttp_delete },
     { "ezhttp_is_request_exists",           ezhttp_is_request_exists },
     { "ezhttp_cancel_request",              ezhttp_cancel_request },
     { "ezhttp_request_progress",            ezhttp_request_progress },

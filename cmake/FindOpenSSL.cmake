@@ -1,30 +1,49 @@
+include(FindPackageHandleStandardArgs)
+
+###
+### Find includes and libraries
+###
+
+find_path(OPENSSL_INCLUDE_DIR
+        NAMES openssl/opensslconf.h
+        PATHS ${AMXX_EASY_HTTP_ROOT}/dep/openssl/include
+        NO_DEFAULT_PATH
+        NO_CACHE
+)
+
 find_library(SSL_LIBRARY
         NAMES libssl.a
-        PATHS ${AMXX_EASY_HTTP_ROOT}/dep/openssl/lib NO_DEFAULT_PATH)
+        PATHS ${AMXX_EASY_HTTP_ROOT}/dep/openssl/lib
+        NO_DEFAULT_PATH
+        NO_CACHE
+)
 
 find_library(CRYPTO_LIBRARY
         NAMES libcrypto.a
-        PATHS ${AMXX_EASY_HTTP_ROOT}/dep/openssl/lib NO_DEFAULT_PATH)
+        PATHS ${AMXX_EASY_HTTP_ROOT}/dep/openssl/lib
+        NO_DEFAULT_PATH
+        NO_CACHE
+)
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(OpenSSL REQUIRED_VARS SSL_LIBRARY CRYPTO_LIBRARY)
+find_package_handle_standard_args(OpenSSL REQUIRED_VARS OPENSSL_INCLUDE_DIR SSL_LIBRARY CRYPTO_LIBRARY)
 
-if (NOT TARGET OPENSSL::libcrypto)
-    add_library(OPENSSL::libcrypto STATIC IMPORTED GLOBAL)
-    set_target_properties(OPENSSL::libcrypto PROPERTIES
-        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-        IMPORTED_LOCATION "${CRYPTO_LIBRARY}"
+###
+### Setup library
+###
+
+if (NOT TARGET OpenSSL::Crypto)
+    add_library(OpenSSL::Crypto STATIC IMPORTED GLOBAL)
+    set_target_properties(OpenSSL::Crypto PROPERTIES
+            IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+            IMPORTED_LOCATION "${CRYPTO_LIBRARY}"
     )
 endif()
 
-if (NOT TARGET OPENSSL::libssl)
-    add_library(OPENSSL::libssl STATIC IMPORTED GLOBAL)
-    set_target_properties(OPENSSL::libssl PROPERTIES
-        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-        IMPORTED_LOCATION "${SSL_LIBRARY}"
-        INTERFACE_LINK_LIBRARIES "OPENSSL::libcrypto"
+if (NOT TARGET OpenSSL::SSL)
+    add_library(OpenSSL::SSL STATIC IMPORTED GLOBAL)
+    set_target_properties(OpenSSL::SSL PROPERTIES
+            IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+            IMPORTED_LOCATION "${SSL_LIBRARY}"
+            INTERFACE_LINK_LIBRARIES "OpenSSL::Crypto"
     )
 endif()
-
-unset(SSL_LIBRARY CACHE)
-unset(CRYPTO_LIBRARY CACHE)
